@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarocchi di Marsiglia - Metodo Tradizionale</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
+
+        :root {
+            --primary: #e57a44;
+            --bg-dark: #2b1d12;
+            --text-light: #f5e9d3;
+        }
+
+        body {
+            font-family: 'Cinzel', serif;
+            background-color: #382e25;
+            color: var(--text-light);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            background-image: radial-gradient(circle, #5e4939 0%, #382e25 70%);
+        }
+
+        #root {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .app-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            box-sizing: border-box;
+            position: relative;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            text-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-style: italic;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            color: var(--primary);
+        }
+        
+        @media (max-width: 600px) {
+            h1 { font-size: 1.6rem; }
+        }
+
+        button {
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            font-style: italic;
+            padding: 0.8rem 1.6rem;
+            border: 2px solid var(--primary);
+            background-color: transparent;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(229, 122, 68, 0.4), 0 0 15px rgba(229, 122, 68, 0.2) inset;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background-color: var(--primary);
+            color: #382e25;
+            box-shadow: 0 0 25px rgba(229, 122, 68, 0.6);
+        }
+        
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .start-button {
+            font-family: 'Century Gothic', sans-serif;
+            margin-top: 10px;
+        }
+        
+        .daily-button {
+            font-family: 'Century Gothic', sans-serif;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Container for Date and Question inputs */
+        .input-group {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            width: 90%;
+            max-width: 600px;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .date-input {
+            font-family: 'Century Gothic', sans-serif;
+            font-size: 1.1rem;
+            font-style: italic;
+            padding: 12px;
+            background-color: rgba(43, 29, 18, 0.9);
+            border: 2px solid var(--primary);
+            border-radius: 4px;
+            color: var(--text-light);
+            text-align: center;
+            outline: none;
+            box-shadow: 0 0 10px rgba(229, 122, 68, 0.2);
+            width: 160px;
+            cursor: pointer;
+            color-scheme: dark; /* Ensures calendar picker is dark */
+        }
+
+        .question-input {
+            font-family: 'Century Gothic', sans-serif;
+            font-size: 1.1rem;
+            font-style: italic;
+            padding: 12px 24px;
+            /* Width handled by flex in input-group usually, but setting defaults */
+            width: 100%;
+            flex: 1;
+            min-width: 200px;
+            background-color: rgba(43, 29, 18, 0.9);
+            border: 2px solid var(--primary);
+            border-radius: 4px;
+            color: var(--text-light);
+            text-align: center;
+            outline: none;
+            box-shadow: 0 0 10px rgba(229, 122, 68, 0.2);
+        }
+
+        .header-reading {
+            position: fixed;
+            top: 20px;
+            width: 100%;
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .question-display {
+            font-size: 1.1rem;
+            font-style: italic;
+            text-shadow: 0 0 5px var(--primary);
+            max-width: 90%;
+            margin: 0 auto;
+            background-color: rgba(43, 29, 18, 0.8);
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(229, 122, 68, 0.3);
+            display: inline-block;
+        }
+        
+        .reading-date {
+            color: var(--primary);
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        /* Bottom Left Controls */
+        .bottom-left-controls {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .zoom-controls {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            background-color: rgba(43, 29, 18, 0.8);
+            padding: 4px 8px;
+            border-radius: 20px;
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .zoom-btn {
+            padding: 0;
+            width: 28px; /* Slightly larger to match action buttons height visually */
+            height: 28px;
+            font-size: 1.2rem;
+            line-height: 1;
+            min-width: 28px;
+            border-radius: 50%; /* Keeping circular for + / - */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(43, 29, 18, 0.8);
+            color: var(--text-light);
+            border: 1px solid var(--primary);
+            cursor: pointer;
+            font-family: 'Cinzel', serif;
+            box-shadow: 0 0 5px rgba(229, 122, 68, 0.4);
+        }
+        
+        .zoom-btn:hover {
+            background-color: var(--primary);
+            color: #382e25;
+            box-shadow: 0 0 15px rgba(229, 122, 68, 0.6);
+        }
+
+        .zoom-label {
+            font-size: 0.8rem;
+            min-width: 35px;
+            text-align: center;
+            font-family: 'Century Gothic', sans-serif;
+            color: var(--text-light);
+        }
+
+        .spread-viewport {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: auto;
+            margin-bottom: 80px;
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .spread-viewport:active {
+            cursor: grabbing;
+        }
+
+        .card {
+            /* Width and Height now set via inline styles from React */
+            position: absolute;
+            transition: transform 0.6s ease, opacity 0.6s ease, width 0.3s ease, height 0.3s ease;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .card.is-visible {
+            opacity: 1;
+        }
+        
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+            border-radius: 6px;
+        }
+        
+        .card.is-dealt .card-inner {
+             transform: rotateY(180deg);
+        }
+
+        .card.is-inverted .card-inner {
+            transform: rotateY(180deg) rotateZ(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+        }
+
+        .card-front {
+            transform: rotateY(180deg);
+            background-color: transparent;
+            box-shadow: none;
+            border: none;
+            overflow: visible;
+        }
+
+        .card-front img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: contain;
+            filter: url(#tarot-correct);
+        }
+
+        .card-front img.unfiltered {
+             filter: none;
+        }
+
+        .card-back {
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at center, var(--primary) 1px, transparent 1px),
+                radial-gradient(circle at center, var(--primary) 1px, transparent 1px);
+            background-size: 14px 14px;
+            background-position: 0 0, 7px 7px;
+            border: 1px solid #5e4939;
+        }
+        
+        /* Arcani Minori */
+        .minor-card {
+            position: absolute;
+            width: 70%;
+            height: 70%;
+            bottom: -10%;
+            right: -10%;
+            z-index: 30;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: auto;
+        }
+
+        .minor-card.enlarged {
+            width: 100%;
+            height: 100%;
+            bottom: 50%;
+            right: 50%;
+            transform: translate(50%, 50%) scale(1.5);
+            z-index: 200;
+        }
+
+        .minor-card .card-inner { transform: rotateY(180deg); }
+        .minor-card.is-inverted .card-inner { transform: rotateY(180deg) rotateZ(180deg); }
+
+        /* Corner Controls (Bottom Right) */
+        .corner-controls {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .action-btn {
+            background-color: rgba(43, 29, 18, 0.8);
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            padding: 5px 10px;
+            min-width: auto;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            border: 1px solid var(--primary);
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(229, 122, 68, 0.4), 0 0 15px rgba(229, 122, 68, 0.2) inset;
+            backdrop-filter: blur(5px);
+            border-radius: 20px;
+        }
+
+        .action-btn:hover {
+            background-color: var(--primary);
+            color: #382e25;
+            box-shadow: 0 0 25px rgba(229, 122, 68, 0.6);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(0.5);
+        }
+
+        /* Completion UI */
+        .completion-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: rgba(43, 29, 18, 0.8);
+            padding: 5px 10px;
+            border-radius: 20px;
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .completion-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin: 0;
+            padding: 0 5px;
+            text-align: center;
+        }
+
+        .completion-btn {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            min-width: auto;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            text-transform: uppercase;
+        }
+
+        /* Daily Card & Admin Views */
+        .daily-view, .admin-view {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.5s ease-out;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .daily-card-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .daily-card-img {
+            width: 240px;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(229, 122, 68, 0.4);
+            filter: url(#tarot-correct);
+            border: 2px solid #5e4939;
+        }
+
+        .daily-phrase {
+            font-size: 1.4rem;
+            color: var(--text-light);
+            max-width: 600px;
+            text-align: center;
+            font-style: italic;
+            line-height: 1.6;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+            background: rgba(43, 29, 18, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(229, 122, 68, 0.3);
+        }
+
+        .admin-panel {
+            width: 95%;
+            max-width: 700px;
+            height: 70vh;
+            background: rgba(43, 29, 18, 0.95);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .admin-row {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            border-bottom: 1px solid rgba(229, 122, 68, 0.2);
+            padding-bottom: 10px;
+        }
+
+        .admin-label {
+            font-size: 0.9rem;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .admin-input {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #5e4939;
+            color: var(--text-light);
+            padding: 8px;
+            font-family: 'Century Gothic', sans-serif;
+            font-size: 1rem;
+            border-radius: 4px;
+        }
+
+        .admin-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .admin-toggle-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.7rem;
+            opacity: 0.8;
+            padding: 5px 10px;
+            border: 1px solid var(--primary);
+            background: transparent;
+            color: var(--primary);
+            z-index: 1000;
+        }
+        
+        .admin-toggle-btn:hover {
+            opacity: 1;
+            color: var(--primary);
+            border-color: var(--primary);
+            box-shadow: none;
+        }
+        
+        @media (max-width: 600px) {
+            .daily-card-img {
+                width: 180px;
+            }
+            .daily-phrase {
+                font-size: 1.1rem;
+            }
+            .admin-panel {
+                height: 60vh;
+            }
+            .corner-controls {
+                bottom: 20px;
+                right: 15px;
+            }
+            .bottom-left-controls {
+                bottom: 20px;
+                left: 15px;
+            }
+            .action-btn {
+                min-width: auto;
+                padding: 6px 12px;
+                font-size: 0.75rem;
+            }
+            /* Ensure the pill fits on mobile */
+            .completion-container {
+                padding: 4px 8px;
+            }
+            .completion-label {
+                font-size: 0.8rem;
+            }
+            .completion-btn {
+                font-size: 0.75rem;
+                padding: 4px 8px;
+            }
+        }
+
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <svg style="width:0;height:0;position:absolute;" aria-hidden="true">
+        <defs>
+            <filter id="tarot-correct">
+                <feColorMatrix type="matrix" values="
+                    1     0     0     0     0
+                    0.3   1.0   -0.3  0     0
+                    0.15  0.15  0.7   0     0
+                    0     0     0     1     0
+                "/>
+            </filter>
+        </defs>
+    </svg>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>
