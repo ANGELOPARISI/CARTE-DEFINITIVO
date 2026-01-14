@@ -127,7 +127,7 @@ function initializeReading(): ReadingState {
         deckGrid.set(posToString(card.position), card);
     }
 
-    return {
+    const initialState: ReadingState = {
         shuffledSeq,
         dealtCards,
         deckGrid,
@@ -137,6 +137,13 @@ function initializeReading(): ReadingState {
         availableMinors: shuffleArray(Array.from({ length: 56 }, (_, i) => i)),
         minorAssociations: {}
     };
+
+    // Check if reading is complete immediately after first 3 cards
+    if (initialState.nextCardIndex >= initialState.shuffledSeq.length || !findNextCardPlacement(initialState)) {
+        initialState.isComplete = true;
+    }
+
+    return initialState;
 }
 
 function findNextCardPlacement(currentState: ReadingState): PotentialPlacement | null {
@@ -184,7 +191,22 @@ function dealNextCard(currentState: ReadingState): ReadingState {
             maxX: Math.max(currentState.bounds.maxX, placement.pos.x),
             maxY: Math.max(currentState.bounds.maxY, placement.pos.y),
         };
-        return { ...currentState, dealtCards: newDealtCards, deckGrid: newDeckGrid, bounds: newBounds, nextCardIndex: currentState.nextCardIndex + 1, isComplete: false };
+
+        const nextState: ReadingState = {
+            ...currentState,
+            dealtCards: newDealtCards,
+            deckGrid: newDeckGrid,
+            bounds: newBounds,
+            nextCardIndex: currentState.nextCardIndex + 1,
+            isComplete: false
+        };
+
+        // Proactive check: determine if this was the last possible card
+        if (nextState.nextCardIndex >= nextState.shuffledSeq.length || !findNextCardPlacement(nextState)) {
+            nextState.isComplete = true;
+        }
+
+        return nextState;
     }
     return { ...currentState, isComplete: true };
 }
@@ -603,6 +625,9 @@ const App = () => {
                                 const isVisible = visibleCardIds.has(card.id);
                                 const assoc = minorAssociations[card.id];
 
+                                // Labels for the first three cards
+                                const label = i === 0 ? "PASSATO" : i === 1 ? "PRESENTE" : i === 2 ? "FUTURO" : null;
+
                                 return (
                                     <div
                                         key={card.id}
@@ -622,6 +647,9 @@ const App = () => {
                                                 <img src={MAJOR_ARCANA_IMAGES[card.tarotNumber]} alt={card.name} />
                                             </div>
                                         </div>
+
+                                        {/* Temporal Labels */}
+                                        {label && <div className="card-label">{label}</div>}
                                         
                                         {/* Minor Arcana Association */}
                                         {assoc && assoc.visible && (
