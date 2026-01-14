@@ -319,6 +319,29 @@
             background-position: 0 0, 7px 7px;
             border: 1px solid #5e4939;
         }
+
+        /* Card Label (Passato, Presente, Futuro) */
+        .card-label {
+            position: absolute;
+            bottom: -32px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 2px;
+            pointer-events: none;
+            text-shadow: 0 0 5px rgba(0,0,0,0.9);
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        .card.is-visible .card-label {
+            opacity: 1;
+        }
         
         /* Arcani Minori */
         .minor-card {
@@ -565,6 +588,11 @@
                 font-size: 0.75rem;
                 padding: 4px 8px;
             }
+            .card-label {
+                font-size: 0.7rem;
+                bottom: -24px;
+                letter-spacing: 1px;
+            }
         }
 
     </style>
@@ -577,7 +605,6 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body>
     <svg style="width:0;height:0;position:absolute;" aria-hidden="true">
