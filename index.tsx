@@ -653,6 +653,7 @@ const App = () => {
                     >
                         i
                     </button>
+                    {/* Pulsante Archivio temporaneamente rimosso
                     <button 
                         className="archive-btn" 
                         onClick={handleArchive}
@@ -663,6 +664,7 @@ const App = () => {
                     </button>
                     {archiveStatus === 'saved' && <div className="archive-feedback">Salvato</div>}
                     {archiveStatus === 'error' && <div className="archive-feedback" style={{color: '#ff4444'}}>Errore</div>}
+                    */}
                     
                     {!reading.isComplete && (
                         <button 
