@@ -392,21 +392,45 @@
             color: var(--amber-dark);
         }
 
-        /* Daily e Admin Panels */
-        .daily-phrase {
-            font-size: 1.4rem;
-            color: var(--text-light);
-            max-width: 600px;
-            text-align: center;
-            font-style: italic;
-            line-height: 1.6;
-            background: rgba(61, 36, 6, 0.7);
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid var(--amber-warm);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        /* Sezione Carta del Giorno */
+        .daily-card-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            margin: 20px 0;
+            max-width: 90%;
+            z-index: 10;
         }
 
+        .daily-card-img {
+            max-width: 100%;
+            height: auto;
+            max-height: 48vh; /* Limita l'altezza per schermi verticali */
+            border-radius: 12px;
+            border: 4px solid var(--amber-warm);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+            object-fit: contain;
+            display: block;
+            background-color: rgba(61, 36, 6, 0.4);
+        }
+
+        .daily-phrase {
+            font-size: 1.3rem;
+            color: var(--text-light);
+            max-width: 550px;
+            text-align: center;
+            font-style: italic;
+            line-height: 1.5;
+            background: rgba(61, 36, 6, 0.85);
+            padding: 18px 25px;
+            border-radius: 14px;
+            border: 1px solid var(--amber-warm);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+            margin-top: 5px;
+        }
+
+        /* Admin Panels */
         .admin-panel {
             width: 95%;
             max-width: 700px;
@@ -438,11 +462,12 @@
         }
 
         @media (max-width: 600px) {
-            .daily-card-img { width: 180px; }
-            .daily-phrase { font-size: 1.1rem; }
+            .daily-card-img { max-height: 40vh; }
+            .daily-phrase { font-size: 1.1rem; padding: 15px; }
             .corner-controls, .bottom-left-controls, .info-toggle-container { bottom: 20px; }
             .info-icon-btn, .draw-icon-btn { width: 40px; height: 40px; }
             .name-input, .date-input, .start-button, .daily-button { width: 240px !important; }
+            h1 { font-size: 1.8rem; }
         }
 
     </style>
