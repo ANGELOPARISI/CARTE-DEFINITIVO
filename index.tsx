@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
+import { toPng } from 'html-to-image';
+import { createClient } from '@supabase/supabase-js';
 import { MAJOR_ARCANA_IMAGES, MINOR_ARCANA_IMAGES } from './card-images';
 
-// Demo mode: backend disabled
+// Supabase client initialization
+const supabaseUrl = process.env.SUPABASE_URL || 'https://your-project.supabase.co';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || 'your-anon-key';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // --- Data Structures & Hardcoded Rules ---
 
@@ -89,6 +94,7 @@ class Card {
 }
 
 interface ReadingState {
+    id: string;
     shuffledSeq: Card[];
     dealtCards: Card[];
     deckGrid: Map<string, Card>;
@@ -155,6 +161,7 @@ function initializeReading(): ReadingState {
     }
 
     const initialState: ReadingState = {
+        id: crypto.randomUUID(),
         shuffledSeq,
         dealtCards,
         deckGrid,
@@ -168,7 +175,6 @@ function initializeReading(): ReadingState {
 
     initialState.totalPlannedCards = calculateTotalPlannedCards(initialState);
     
-    // Check if reading is complete after first 3 cards
     if (initialState.nextCardIndex >= initialState.shuffledSeq.length || !findNextCardPlacement(initialState)) {
         initialState.isComplete = true;
     }
@@ -231,7 +237,6 @@ function dealNextCard(currentState: ReadingState): ReadingState {
             isComplete: false 
         };
 
-        // Automate completion check: determine if this was the last card
         if (nextState.nextCardIndex >= nextState.shuffledSeq.length || !findNextCardPlacement(nextState)) {
             nextState.isComplete = true;
         }
@@ -307,6 +312,7 @@ const App = () => {
     const [consultantName, setConsultantName] = useState("");
     const [readingDate, setReadingDate] = useState(getTodayDate());
     const [showInfo, setShowInfo] = useState(false);
+    const [archiveStatus, setArchiveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
     const [phrases, setPhrases] = useState<string[]>(() => {
         const saved = localStorage.getItem('itarot_phrases');
@@ -372,6 +378,7 @@ const App = () => {
         setFlippedCardIds(new Set());
         setVisibleCardIds(new Set());
         setShowInfo(false);
+        setArchiveStatus('idle');
         
         const initialState = initializeReading();
         setReading(initialState);
@@ -416,7 +423,56 @@ const App = () => {
         setConsultantName("");
         setReadingDate(getTodayDate());
         setShowInfo(false);
+        setArchiveStatus('idle');
         setView('home');
+    };
+
+    const handleArchive = async () => {
+        if (!reading || archiveStatus === 'saving') return;
+        setArchiveStatus('saving');
+        const node = document.getElementById('spread-area');
+        if (!node) {
+            setArchiveStatus('error');
+            return;
+        }
+
+        try {
+            const dataUrl = await toPng(node, { 
+                cacheBust: true,
+                backgroundColor: '#382e25',
+                style: {
+                    transform: 'scale(1)',
+                    transformOrigin: 'top left'
+                }
+            });
+            const res = await fetch(dataUrl);
+            const blob = await res.blob();
+            
+            const timestamp = Date.now();
+            const filePath = `consultations/${reading.id}/${timestamp}.png`;
+
+            // Upload to Supabase Storage
+            const { error: uploadError } = await supabase.storage
+                .from("consultation-screenshots")
+                .upload(filePath, blob, { contentType: "image/png", upsert: true });
+
+            if (uploadError) throw uploadError;
+
+            // Update Database Record
+            const { error: updateError } = await supabase
+                .from("consultations")
+                .update({ spread_screenshot_path: filePath })
+                .eq("id", reading.id);
+
+            if (updateError) throw updateError;
+
+            setArchiveStatus('saved');
+            setTimeout(() => setArchiveStatus('idle'), 3000);
+        } catch (err) {
+            console.error("Archive error:", err);
+            setArchiveStatus('error');
+            setTimeout(() => setArchiveStatus('idle'), 3000);
+        }
     };
 
     const handleDailyCardClick = () => {
@@ -582,7 +638,6 @@ const App = () => {
                 <div className="bottom-left-controls">
                      <div className="zoom-controls">
                         <button className="zoom-btn" onClick={() => handleZoomChange(-0.1)}>−</button>
-                        <span className="zoom-label">{Math.round(zoomLevel * 100)}%</span>
                         <button className="zoom-btn" onClick={() => handleZoomChange(0.1)}>+</button>
                     </div>
                 </div>
@@ -598,22 +653,36 @@ const App = () => {
                     >
                         i
                     </button>
+                    <button 
+                        className="archive-btn" 
+                        onClick={handleArchive}
+                        disabled={archiveStatus === 'saving'}
+                        title="Archivia Stesura"
+                    >
+                        {archiveStatus === 'saving' ? '...' : 'A'}
+                    </button>
+                    {archiveStatus === 'saved' && <div className="archive-feedback">Salvato</div>}
+                    {archiveStatus === 'error' && <div className="archive-feedback" style={{color: '#ff4444'}}>Errore</div>}
+                    
+                    {!reading.isComplete && (
+                        <button 
+                            className="draw-icon-btn" 
+                            onClick={handleDrawNextCard} 
+                            disabled={isInteracting}
+                            title="Estrai Carta Successiva"
+                        >
+                            <svg viewBox="0 0 20 30" fill="none" stroke="currentColor" strokeWidth="2">
+                                <rect x="2" y="2" width="16" height="26" rx="2"/>
+                                <circle cx="10" cy="15" r="3" strokeWidth="1" opacity="0.6"/>
+                                <path d="M6 10L14 10M6 20L14 20" strokeWidth="1" opacity="0.4"/>
+                            </svg>
+                        </button>
+                    )}
                 </div>
 
                 <div className="corner-controls">
-                     {!reading.isComplete ? (
-                        <button 
-                            className="action-btn" 
-                            onClick={handleDrawNextCard} 
-                            disabled={isInteracting}
-                        >
-                            Estrai Carta Successiva
-                        </button>
-                    ) : (
-                         <div className="completion-container">
-                            <span className="completion-label">LETTURA CONCLUSA</span>
-                            <button className="completion-btn action-btn" onClick={handleReset}>Termina</button>
-                        </div>
+                     {reading.isComplete && (
+                         <button className="action-btn completion-btn-final" onClick={handleReset}>FINE</button>
                     )}
                 </div>
 
@@ -630,7 +699,7 @@ const App = () => {
                         width: `${contentWidth}px`,
                         height: `${contentHeight}px`,
                         position: 'relative'
-                   }}>
+                   }} id="spread-area">
                         <div style={{
                             position: 'absolute',
                             width: `${totalWidth}px`,
@@ -699,9 +768,6 @@ const App = () => {
     const renderHome = () => (
         <div className="app-container">
             <h1>Tarocchi di Marsiglia</h1>
-            <div className="consultant-display">
-                Consultante: {consultantName || "—"}
-            </div>
             
             <div className="input-group">
                 <input 
