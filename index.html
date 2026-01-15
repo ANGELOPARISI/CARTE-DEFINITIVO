@@ -423,14 +423,13 @@
             transform: translateX(-50%);
             z-index: 105;
             display: flex;
-            flex-direction: row;
+            flex-direction: column;
             align-items: center;
-            gap: 12px;
         }
 
-        .info-icon-btn, .archive-btn {
-            width: 36px;
-            height: 36px;
+        .info-icon-btn {
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             background-color: rgba(43, 29, 18, 0.9);
             border: 1px solid var(--primary);
@@ -439,8 +438,8 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-family: 'Cinzel', serif;
             font-weight: bold;
+            font-family: serif;
             font-size: 1.1rem;
             box-shadow: 0 0 10px rgba(229, 122, 68, 0.3);
             transition: all 0.3s ease;
@@ -448,20 +447,15 @@
             line-height: 1;
         }
 
-        .info-icon-btn:hover, .archive-btn:hover:not(:disabled) {
+        .info-icon-btn:hover {
             background-color: var(--primary);
             color: var(--bg-dark);
             box-shadow: 0 0 15px var(--primary);
         }
 
-        .archive-btn:disabled {
-            opacity: 0.6;
-            cursor: wait;
-        }
-
         .info-tooltip {
             position: absolute;
-            bottom: 48px;
+            bottom: 45px;
             left: 50%;
             transform: translateX(-50%) translateY(10px);
             background-color: rgba(43, 29, 18, 0.95);
@@ -483,22 +477,6 @@
             opacity: 1;
             transform: translateX(-50%) translateY(0);
             pointer-events: auto;
-        }
-
-        .archive-feedback {
-            position: absolute;
-            bottom: 48px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.8);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            color: var(--text-light);
-            z-index: 2001;
-            pointer-events: none;
-            animation: fadeIn 0.3s ease;
-            white-space: nowrap;
         }
 
         .completion-container {
@@ -650,8 +628,7 @@
             .admin-panel { height: 60vh; }
             .corner-controls { bottom: 20px; right: 15px; }
             .bottom-left-controls { bottom: 20px; left: 15px; }
-            .info-toggle-container { bottom: 20px; gap: 8px; }
-            .info-icon-btn, .archive-btn { width: 34px; height: 34px; font-size: 1rem; }
+            .info-toggle-container { bottom: 20px; }
             .action-btn { min-width: auto; padding: 6px 12px; font-size: 0.75rem; }
             .completion-container { padding: 4px 8px; }
             .completion-label { font-size: 0.8rem; }
@@ -665,9 +642,7 @@
   "imports": {
     "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "html-to-image": "https://esm.sh/html-to-image@1.11.11",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2"
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
   }
 }
 </script>
