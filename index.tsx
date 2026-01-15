@@ -1,13 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import { toPng } from 'html-to-image';
-import { createClient } from '@supabase/supabase-js';
 import { MAJOR_ARCANA_IMAGES, MINOR_ARCANA_IMAGES } from './card-images';
 
-// Supabase client initialization (Assuming environment variables are managed externally)
-const supabaseUrl = process.env.SUPABASE_URL || 'https://your-project.supabase.co';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || 'your-anon-key';
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Demo mode: backend disabled
 
 // --- Data Structures & Hardcoded Rules ---
 
@@ -94,7 +89,6 @@ class Card {
 }
 
 interface ReadingState {
-    id: string; // ID della consultazione
     shuffledSeq: Card[];
     dealtCards: Card[];
     deckGrid: Map<string, Card>;
@@ -161,7 +155,6 @@ function initializeReading(): ReadingState {
     }
 
     const initialState: ReadingState = {
-        id: crypto.randomUUID(),
         shuffledSeq,
         dealtCards,
         deckGrid,
@@ -175,6 +168,7 @@ function initializeReading(): ReadingState {
 
     initialState.totalPlannedCards = calculateTotalPlannedCards(initialState);
     
+    // Check if reading is complete after first 3 cards
     if (initialState.nextCardIndex >= initialState.shuffledSeq.length || !findNextCardPlacement(initialState)) {
         initialState.isComplete = true;
     }
@@ -237,6 +231,7 @@ function dealNextCard(currentState: ReadingState): ReadingState {
             isComplete: false 
         };
 
+        // Automate completion check: determine if this was the last card
         if (nextState.nextCardIndex >= nextState.shuffledSeq.length || !findNextCardPlacement(nextState)) {
             nextState.isComplete = true;
         }
@@ -312,7 +307,6 @@ const App = () => {
     const [consultantName, setConsultantName] = useState("");
     const [readingDate, setReadingDate] = useState(getTodayDate());
     const [showInfo, setShowInfo] = useState(false);
-    const [archiveStatus, setArchiveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
     const [phrases, setPhrases] = useState<string[]>(() => {
         const saved = localStorage.getItem('itarot_phrases');
@@ -378,7 +372,6 @@ const App = () => {
         setFlippedCardIds(new Set());
         setVisibleCardIds(new Set());
         setShowInfo(false);
-        setArchiveStatus('idle');
         
         const initialState = initializeReading();
         setReading(initialState);
@@ -423,56 +416,7 @@ const App = () => {
         setConsultantName("");
         setReadingDate(getTodayDate());
         setShowInfo(false);
-        setArchiveStatus('idle');
         setView('home');
-    };
-
-    const handleArchive = async () => {
-        if (!reading || archiveStatus === 'saving') return;
-        setArchiveStatus('saving');
-        const node = document.getElementById('spread-area');
-        if (!node) {
-            setArchiveStatus('error');
-            return;
-        }
-
-        try {
-            const dataUrl = await toPng(node, { 
-                cacheBust: true,
-                backgroundColor: '#382e25',
-                style: {
-                    transform: 'scale(1)',
-                    transformOrigin: 'top left'
-                }
-            });
-            const res = await fetch(dataUrl);
-            const blob = await res.blob();
-            
-            const timestamp = Date.now();
-            const filePath = `consultations/${reading.id}/${timestamp}.png`;
-
-            // Upload to Supabase Storage
-            const { error: uploadError } = await supabase.storage
-                .from("consultation-screenshots")
-                .upload(filePath, blob, { contentType: "image/png", upsert: true });
-
-            if (uploadError) throw uploadError;
-
-            // Update Database Record
-            const { error: updateError } = await supabase
-                .from("consultations")
-                .update({ spread_screenshot_path: filePath })
-                .eq("id", reading.id);
-
-            if (updateError) throw updateError;
-
-            setArchiveStatus('saved');
-            setTimeout(() => setArchiveStatus('idle'), 3000);
-        } catch (err) {
-            console.error("Archive error:", err);
-            setArchiveStatus('error');
-            setTimeout(() => setArchiveStatus('idle'), 3000);
-        }
     };
 
     const handleDailyCardClick = () => {
@@ -654,16 +598,6 @@ const App = () => {
                     >
                         i
                     </button>
-                    <button 
-                        className="archive-btn" 
-                        onClick={handleArchive}
-                        disabled={archiveStatus === 'saving'}
-                        title="Archivia Stesura"
-                    >
-                        {archiveStatus === 'saving' ? '...' : 'A'}
-                    </button>
-                    {archiveStatus === 'saved' && <div className="archive-feedback">Salvato</div>}
-                    {archiveStatus === 'error' && <div className="archive-feedback" style={{color: '#ff4444'}}>Errore</div>}
                 </div>
 
                 <div className="corner-controls">
@@ -696,7 +630,7 @@ const App = () => {
                         width: `${contentWidth}px`,
                         height: `${contentHeight}px`,
                         position: 'relative'
-                   }} id="spread-area">
+                   }}>
                         <div style={{
                             position: 'absolute',
                             width: `${totalWidth}px`,
