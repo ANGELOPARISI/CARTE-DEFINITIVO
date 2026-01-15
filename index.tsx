@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
+import { toPng } from 'html-to-image';
+import { createClient } from '@supabase/supabase-js';
 import { MAJOR_ARCANA_IMAGES, MINOR_ARCANA_IMAGES } from './card-images';
 
-// Demo mode: backend disabled
+// Supabase client initialization (Assuming environment variables are managed externally)
+const supabaseUrl = process.env.SUPABASE_URL || 'https://your-project.supabase.co';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || 'your-anon-key';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // --- Data Structures & Hardcoded Rules ---
 
 const MAJOR_ARCANA_NAMES = [
-    "Il Matto", "Il Bataleur", "La Papessa", "L'Imperatrice", "L'Imperatore",
+    "Il Matto", "Il Bagatto", "La Papessa", "L'Imperatrice", "L'Imperatore",
     "Il Papa", "Gli Innamorati", "Il Carro", "La Giustizia", "L'Eremita",
-    "La Ruota", "La Forza", "L'Appeso", "Arcano 13",
+    "La Ruota", "La Forza", "L'Appeso", "Arcano XIII",
     "La Temperanza", "Il Diavolo", "La Casa Dio", "La Stella", "La Luna",
     "Il Sole", "Il Giudizio", "Il Mondo"
 ];
@@ -89,6 +94,7 @@ class Card {
 }
 
 interface ReadingState {
+    id: string; // ID della consultazione
     shuffledSeq: Card[];
     dealtCards: Card[];
     deckGrid: Map<string, Card>;
@@ -97,6 +103,7 @@ interface ReadingState {
     isComplete: boolean;
     availableMinors: number[];
     minorAssociations: Record<number, MinorAssociation>;
+    totalPlannedCards: number;
 }
 
 const posToString = (pos: DeckPosition) => `${pos.x},${pos.y}`;
@@ -108,6 +115,32 @@ function shuffleArray<T>(array: T[]): T[] {
         [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
     }
     return newArray;
+}
+
+function calculateTotalPlannedCards(state: ReadingState): number {
+    let current = { ...state };
+    current.deckGrid = new Map(state.deckGrid);
+    
+    while (current.nextCardIndex < current.shuffledSeq.length) {
+        const placement = findNextCardPlacement(current);
+        if (!placement) break;
+        
+        const nextCardTemplate = current.shuffledSeq[current.nextCardIndex];
+        const simulatedCard = new Card(
+            nextCardTemplate.id, 
+            nextCardTemplate.tarotNumber, 
+            nextCardTemplate.inverted, 
+            placement.pos, 
+            placement.role
+        );
+        
+        if (placement.role === 'soluzione') simulatedCard.straighten();
+        
+        current.dealtCards = [...current.dealtCards, simulatedCard];
+        current.deckGrid.set(posToString(placement.pos), simulatedCard);
+        current.nextCardIndex += 1;
+    }
+    return current.dealtCards.length;
 }
 
 function initializeReading(): ReadingState {
@@ -128,6 +161,7 @@ function initializeReading(): ReadingState {
     }
 
     const initialState: ReadingState = {
+        id: crypto.randomUUID(),
         shuffledSeq,
         dealtCards,
         deckGrid,
@@ -135,10 +169,12 @@ function initializeReading(): ReadingState {
         nextCardIndex: 3,
         isComplete: false,
         availableMinors: shuffleArray(Array.from({ length: 56 }, (_, i) => i)),
-        minorAssociations: {}
+        minorAssociations: {},
+        totalPlannedCards: 0
     };
 
-    // Check if reading is complete immediately after first 3 cards
+    initialState.totalPlannedCards = calculateTotalPlannedCards(initialState);
+    
     if (initialState.nextCardIndex >= initialState.shuffledSeq.length || !findNextCardPlacement(initialState)) {
         initialState.isComplete = true;
     }
@@ -191,17 +227,16 @@ function dealNextCard(currentState: ReadingState): ReadingState {
             maxX: Math.max(currentState.bounds.maxX, placement.pos.x),
             maxY: Math.max(currentState.bounds.maxY, placement.pos.y),
         };
-
-        const nextState: ReadingState = {
-            ...currentState,
-            dealtCards: newDealtCards,
-            deckGrid: newDeckGrid,
-            bounds: newBounds,
-            nextCardIndex: currentState.nextCardIndex + 1,
-            isComplete: false
+        
+        const nextState: ReadingState = { 
+            ...currentState, 
+            dealtCards: newDealtCards, 
+            deckGrid: newDeckGrid, 
+            bounds: newBounds, 
+            nextCardIndex: currentState.nextCardIndex + 1, 
+            isComplete: false 
         };
 
-        // Proactive check: determine if this was the last possible card
         if (nextState.nextCardIndex >= nextState.shuffledSeq.length || !findNextCardPlacement(nextState)) {
             nextState.isComplete = true;
         }
@@ -218,7 +253,6 @@ const BASE_GAP = 7;
 
 type ViewState = 'home' | 'reading' | 'daily' | 'admin';
 
-// Separate AdminPanel component to adhere to React Hook Rules
 const AdminPanel = ({ 
     initialPhrases, 
     onSave, 
@@ -228,10 +262,8 @@ const AdminPanel = ({
     onSave: (p: string[]) => void, 
     onCancel: () => void 
 }) => {
-    // Hooks MUST be at the top level of a component
     const [localPhrases, setLocalPhrases] = useState<string[]>(initialPhrases);
 
-    // Sync local state if initialPhrases changes (optional, but good practice if updated from outside)
     useEffect(() => {
         setLocalPhrases(initialPhrases);
     }, [initialPhrases]);
@@ -266,31 +298,29 @@ const AdminPanel = ({
     );
 };
 
-// Utility to get today's date in YYYY-MM-DD
 const getTodayDate = () => {
     return new Date().toISOString().split('T')[0];
 };
 
 const App = () => {
-    // App State
     const [view, setView] = useState<ViewState>('home');
     const [reading, setReading] = useState<ReadingState | null>(null);
     const [flippedCardIds, setFlippedCardIds] = useState<Set<number>>(new Set());
     const [visibleCardIds, setVisibleCardIds] = useState<Set<number>>(new Set());
     const [isInteracting, setIsInteracting] = useState(false);
     const [question, setQuestion] = useState("");
+    const [consultantName, setConsultantName] = useState("");
     const [readingDate, setReadingDate] = useState(getTodayDate());
+    const [showInfo, setShowInfo] = useState(false);
+    const [archiveStatus, setArchiveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
-    // Phrases State
     const [phrases, setPhrases] = useState<string[]>(() => {
         const saved = localStorage.getItem('itarot_phrases');
         return saved ? JSON.parse(saved) : DEFAULT_PHRASES;
     });
 
-    // Daily Card State
     const [dailyCardIndex, setDailyCardIndex] = useState<number | null>(null);
     
-    // Zoom State
     const [zoomLevel, setZoomLevel] = useState<number>(() => {
         if (typeof window === 'undefined') return 1;
         const saved = localStorage.getItem('tarot_zoom');
@@ -307,13 +337,11 @@ const App = () => {
         });
     };
     
-    // Viewport drag refs
     const viewportRef = useRef<HTMLDivElement>(null);
     const isDragging = useRef(false);
     const lastPos = useRef({ x: 0, y: 0 });
     const isClickBlocked = useRef(false);
 
-    // Auto-center effect for reading
     useEffect(() => {
         if (view === 'reading' && reading && viewportRef.current) {
             const { bounds } = reading;
@@ -333,7 +361,6 @@ const App = () => {
             
             const viewport = viewportRef.current;
             
-            // Calculate center
             const scrollLeft = (contentWidth - viewport.clientWidth) / 2;
             const scrollTop = (contentHeight - viewport.clientHeight) / 2;
 
@@ -345,30 +372,26 @@ const App = () => {
         }
     }, [reading?.dealtCards, zoomLevel, view]);
 
-    // --- Actions ---
-
     const handleStartReading = useCallback(() => {
         if (isInteracting) return;
         setIsInteracting(true);
         setFlippedCardIds(new Set());
         setVisibleCardIds(new Set());
+        setShowInfo(false);
+        setArchiveStatus('idle');
         
         const initialState = initializeReading();
         setReading(initialState);
         setView('reading');
         
-        // Sequence: Left (0) -> Center (1) -> Right (2)
-        // Appearance first, then flip
         initialState.dealtCards.forEach((card, index) => {
-            const appearDelay = index * 800; // 0, 800, 1600
-            const flipDelay = appearDelay + 400; // 400, 1200, 2000
+            const appearDelay = index * 800;
+            const flipDelay = appearDelay + 400;
 
-            // Show card (appear animation)
             setTimeout(() => {
                 setVisibleCardIds(prev => new Set(prev).add(card.id));
             }, appearDelay);
 
-            // Flip card
             setTimeout(() => {
                 setFlippedCardIds(prev => new Set(prev).add(card.id));
             }, flipDelay);
@@ -384,7 +407,6 @@ const App = () => {
         setReading(newState);
         const lastCard = newState.dealtCards[newState.dealtCards.length - 1];
         
-        // Make sure the new card is visible immediately
         setVisibleCardIds(prev => new Set(prev).add(lastCard.id));
 
         setTimeout(() => {
@@ -398,12 +420,63 @@ const App = () => {
         setFlippedCardIds(new Set());
         setVisibleCardIds(new Set());
         setQuestion("");
+        setConsultantName("");
         setReadingDate(getTodayDate());
+        setShowInfo(false);
+        setArchiveStatus('idle');
         setView('home');
     };
 
+    const handleArchive = async () => {
+        if (!reading || archiveStatus === 'saving') return;
+        setArchiveStatus('saving');
+        const node = document.getElementById('spread-area');
+        if (!node) {
+            setArchiveStatus('error');
+            return;
+        }
+
+        try {
+            const dataUrl = await toPng(node, { 
+                cacheBust: true,
+                backgroundColor: '#382e25',
+                style: {
+                    transform: 'scale(1)',
+                    transformOrigin: 'top left'
+                }
+            });
+            const res = await fetch(dataUrl);
+            const blob = await res.blob();
+            
+            const timestamp = Date.now();
+            const filePath = `consultations/${reading.id}/${timestamp}.png`;
+
+            // Upload to Supabase Storage
+            const { error: uploadError } = await supabase.storage
+                .from("consultation-screenshots")
+                .upload(filePath, blob, { contentType: "image/png", upsert: true });
+
+            if (uploadError) throw uploadError;
+
+            // Update Database Record
+            const { error: updateError } = await supabase
+                .from("consultations")
+                .update({ spread_screenshot_path: filePath })
+                .eq("id", reading.id);
+
+            if (updateError) throw updateError;
+
+            setArchiveStatus('saved');
+            setTimeout(() => setArchiveStatus('idle'), 3000);
+        } catch (err) {
+            console.error("Archive error:", err);
+            setArchiveStatus('error');
+            setTimeout(() => setArchiveStatus('idle'), 3000);
+        }
+    };
+
     const handleDailyCardClick = () => {
-        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const today = new Date().toISOString().slice(0, 10);
         const key = `itarot_major_card_of_the_day_${today}`;
         const stored = localStorage.getItem(key);
         
@@ -411,7 +484,6 @@ const App = () => {
         if (stored) {
             index = parseInt(stored, 10);
         } else {
-            // New card for today
             index = Math.floor(Math.random() * 22);
             localStorage.setItem(key, index.toString());
         }
@@ -428,8 +500,6 @@ const App = () => {
         localStorage.setItem('itarot_phrases', JSON.stringify(newPhrases));
         setView('home');
     };
-
-    // --- Interaction Handlers ---
 
     const handleMajorClick = (cardId: number) => {
         if (isClickBlocked.current) return;
@@ -529,8 +599,6 @@ const App = () => {
         }
     };
 
-    // --- Renderers ---
-
     const formatDateDisplay = (dateStr: string) => {
         if (!dateStr) return "";
         const parts = dateStr.split('-');
@@ -540,7 +608,7 @@ const App = () => {
 
     const renderReading = () => {
         if (!reading) return null;
-        const { dealtCards, bounds, minorAssociations } = reading;
+        const { dealtCards, bounds, minorAssociations, totalPlannedCards } = reading;
         
         const currentWidth = BASE_CARD_WIDTH * zoomLevel;
         const currentHeight = BASE_CARD_HEIGHT * zoomLevel;
@@ -558,15 +626,15 @@ const App = () => {
         return (
             <>
                 <div className="header-reading">
-                     {question && (
+                     {(question || consultantName) && (
                         <div className="question-display">
                             <span className="reading-date">{formatDateDisplay(readingDate)}</span>
+                            {consultantName && <strong style={{color: 'var(--primary)', marginRight: '10px'}}>{consultantName}:</strong>}
                             {question}
                         </div>
                     )}
                 </div>
 
-                {/* Bottom Left: Zoom Controls */}
                 <div className="bottom-left-controls">
                      <div className="zoom-controls">
                         <button className="zoom-btn" onClick={() => handleZoomChange(-0.1)}>−</button>
@@ -575,7 +643,29 @@ const App = () => {
                     </div>
                 </div>
 
-                {/* Bottom Right: Action Controls */}
+                <div className="info-toggle-container">
+                    <div className={`info-tooltip ${showInfo ? 'show' : ''}`}>
+                        Carte totali in questa stesura: {totalPlannedCards}
+                    </div>
+                    <button 
+                        className="info-icon-btn" 
+                        onClick={() => setShowInfo(!showInfo)}
+                        title="Informazioni sulla stesura"
+                    >
+                        i
+                    </button>
+                    <button 
+                        className="archive-btn" 
+                        onClick={handleArchive}
+                        disabled={archiveStatus === 'saving'}
+                        title="Archivia Stesura"
+                    >
+                        {archiveStatus === 'saving' ? '...' : 'A'}
+                    </button>
+                    {archiveStatus === 'saved' && <div className="archive-feedback">Salvato</div>}
+                    {archiveStatus === 'error' && <div className="archive-feedback" style={{color: '#ff4444'}}>Errore</div>}
+                </div>
+
                 <div className="corner-controls">
                      {!reading.isComplete ? (
                         <button 
@@ -587,7 +677,7 @@ const App = () => {
                         </button>
                     ) : (
                          <div className="completion-container">
-                            <span className="completion-label">Lettura Completata</span>
+                            <span className="completion-label">LETTURA CONCLUSA</span>
                             <button className="completion-btn action-btn" onClick={handleReset}>Termina</button>
                         </div>
                     )}
@@ -600,12 +690,13 @@ const App = () => {
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
+                    onClick={() => { if(showInfo) setShowInfo(false); }}
                 >
                    <div style={{
                         width: `${contentWidth}px`,
                         height: `${contentHeight}px`,
                         position: 'relative'
-                   }}>
+                   }} id="spread-area">
                         <div style={{
                             position: 'absolute',
                             width: `${totalWidth}px`,
@@ -614,7 +705,6 @@ const App = () => {
                             top: `${PADDING}px`,
                         }}>
                             {dealtCards.map((card, i) => {
-                                // Calculate position relative to minX/minY
                                 const col = card.position.x - bounds.minX;
                                 const row = card.position.y - bounds.minY;
                                 
@@ -625,7 +715,6 @@ const App = () => {
                                 const isVisible = visibleCardIds.has(card.id);
                                 const assoc = minorAssociations[card.id];
 
-                                // Labels for the first three cards
                                 const label = i === 0 ? "PASSATO" : i === 1 ? "PRESENTE" : i === 2 ? "FUTURO" : null;
 
                                 return (
@@ -648,10 +737,8 @@ const App = () => {
                                             </div>
                                         </div>
 
-                                        {/* Temporal Labels */}
                                         {label && <div className="card-label">{label}</div>}
                                         
-                                        {/* Minor Arcana Association */}
                                         {assoc && assoc.visible && (
                                             <div 
                                                 className={`minor-card ${assoc.inverted ? 'is-inverted' : ''} ${assoc.enlarged ? 'enlarged' : ''}`}
@@ -678,8 +765,18 @@ const App = () => {
     const renderHome = () => (
         <div className="app-container">
             <h1>Tarocchi di Marsiglia</h1>
+            <div className="consultant-display">
+                Consultante: {consultantName || "—"}
+            </div>
             
             <div className="input-group">
+                <input 
+                    type="text" 
+                    className="name-input"
+                    placeholder="Nome Consultante"
+                    value={consultantName}
+                    onChange={(e) => setConsultantName(e.target.value)}
+                />
                 <input 
                     type="date" 
                     className="date-input"
