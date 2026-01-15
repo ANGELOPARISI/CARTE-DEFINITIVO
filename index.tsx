@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import { toPng } from 'html-to-image';
-import { createClient } from '@supabase/supabase-js';
 import { MAJOR_ARCANA_IMAGES, MINOR_ARCANA_IMAGES } from './card-images';
-
-// Supabase client initialization
-const supabaseUrl = process.env.SUPABASE_URL || 'https://your-project.supabase.co';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || 'your-anon-key';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 // --- Data Structures & Hardcoded Rules ---
 
@@ -312,7 +305,6 @@ const App = () => {
     const [consultantName, setConsultantName] = useState("");
     const [readingDate, setReadingDate] = useState(getTodayDate());
     const [showInfo, setShowInfo] = useState(false);
-    const [archiveStatus, setArchiveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
     const [phrases, setPhrases] = useState<string[]>(() => {
         const saved = localStorage.getItem('itarot_phrases');
@@ -378,7 +370,6 @@ const App = () => {
         setFlippedCardIds(new Set());
         setVisibleCardIds(new Set());
         setShowInfo(false);
-        setArchiveStatus('idle');
         
         const initialState = initializeReading();
         setReading(initialState);
@@ -423,56 +414,7 @@ const App = () => {
         setConsultantName("");
         setReadingDate(getTodayDate());
         setShowInfo(false);
-        setArchiveStatus('idle');
         setView('home');
-    };
-
-    const handleArchive = async () => {
-        if (!reading || archiveStatus === 'saving') return;
-        setArchiveStatus('saving');
-        const node = document.getElementById('spread-area');
-        if (!node) {
-            setArchiveStatus('error');
-            return;
-        }
-
-        try {
-            const dataUrl = await toPng(node, { 
-                cacheBust: true,
-                backgroundColor: '#382e25',
-                style: {
-                    transform: 'scale(1)',
-                    transformOrigin: 'top left'
-                }
-            });
-            const res = await fetch(dataUrl);
-            const blob = await res.blob();
-            
-            const timestamp = Date.now();
-            const filePath = `consultations/${reading.id}/${timestamp}.png`;
-
-            // Upload to Supabase Storage
-            const { error: uploadError } = await supabase.storage
-                .from("consultation-screenshots")
-                .upload(filePath, blob, { contentType: "image/png", upsert: true });
-
-            if (uploadError) throw uploadError;
-
-            // Update Database Record
-            const { error: updateError } = await supabase
-                .from("consultations")
-                .update({ spread_screenshot_path: filePath })
-                .eq("id", reading.id);
-
-            if (updateError) throw updateError;
-
-            setArchiveStatus('saved');
-            setTimeout(() => setArchiveStatus('idle'), 3000);
-        } catch (err) {
-            console.error("Archive error:", err);
-            setArchiveStatus('error');
-            setTimeout(() => setArchiveStatus('idle'), 3000);
-        }
     };
 
     const handleDailyCardClick = () => {
@@ -653,18 +595,6 @@ const App = () => {
                     >
                         i
                     </button>
-                    {/* Pulsante Archivio temporaneamente rimosso
-                    <button 
-                        className="archive-btn" 
-                        onClick={handleArchive}
-                        disabled={archiveStatus === 'saving'}
-                        title="Archivia Stesura"
-                    >
-                        {archiveStatus === 'saving' ? '...' : 'A'}
-                    </button>
-                    {archiveStatus === 'saved' && <div className="archive-feedback">Salvato</div>}
-                    {archiveStatus === 'error' && <div className="archive-feedback" style={{color: '#ff4444'}}>Errore</div>}
-                    */}
                     
                     {!reading.isComplete && (
                         <button 
