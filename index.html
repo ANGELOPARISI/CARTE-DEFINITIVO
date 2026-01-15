@@ -57,12 +57,7 @@
         }
 
         .consultant-display {
-            font-size: 1rem;
-            color: var(--primary);
-            margin-bottom: 1.5rem;
-            font-style: italic;
-            letter-spacing: 1px;
-            opacity: 0.9;
+            display: none; 
         }
 
         .subtitle {
@@ -89,6 +84,7 @@
             box-shadow: 0 0 10px rgba(229, 122, 68, 0.4), 0 0 15px rgba(229, 122, 68, 0.2) inset;
             border-radius: 4px;
             text-transform: uppercase;
+            box-sizing: border-box;
         }
 
         button:hover {
@@ -102,16 +98,35 @@
             opacity: 0.5;
         }
 
+        /* Unified dimensions for Name Input, Date Input, and main home buttons */
+        .name-input, 
+        .date-input, 
+        .start-button, 
+        .daily-button {
+            width: 260px !important;
+            height: 52px !important;
+            box-sizing: border-box !important;
+            margin: 5px !important;
+        }
+
         .start-button {
             font-family: 'Century Gothic', sans-serif;
-            margin-top: 10px;
+            margin-top: 15px !important;
+            padding: 0 !important;
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
         }
         
         .daily-button {
             font-family: 'Century Gothic', sans-serif;
-            margin-top: 15px;
-            font-size: 0.9rem;
+            margin-top: 5px !important;
+            font-size: 0.9rem !important;
             opacity: 0.9;
+            padding: 0 !important;
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
         }
 
         /* Container for Date and Question inputs */
@@ -120,10 +135,10 @@
             flex-direction: row;
             justify-content: center;
             align-items: center;
-            gap: 10px;
+            gap: 0;
             width: 90%;
             max-width: 600px;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             flex-wrap: wrap;
         }
 
@@ -131,7 +146,7 @@
             font-family: 'Century Gothic', sans-serif;
             font-size: 1.1rem;
             font-style: italic;
-            padding: 12px;
+            padding: 0 12px;
             background-color: rgba(43, 29, 18, 0.9);
             border: 2px solid var(--primary);
             border-radius: 4px;
@@ -141,10 +156,8 @@
             box-shadow: 0 0 10px rgba(229, 122, 68, 0.2);
             cursor: pointer;
             color-scheme: dark;
+            box-sizing: border-box;
         }
-
-        .date-input { width: 160px; }
-        .name-input { width: 200px; }
 
         .question-input {
             font-family: 'Century Gothic', sans-serif;
@@ -153,7 +166,7 @@
             padding: 12px 24px;
             width: 100%;
             flex: 1;
-            min-width: 250px;
+            min-width: 260px;
             background-color: rgba(43, 29, 18, 0.9);
             border: 2px solid var(--primary);
             border-radius: 4px;
@@ -161,6 +174,8 @@
             text-align: center;
             outline: none;
             box-shadow: 0 0 10px rgba(229, 122, 68, 0.2);
+            box-sizing: border-box;
+            margin: 5px;
         }
 
         .header-reading {
@@ -205,10 +220,10 @@
 
         .zoom-controls {
             display: flex;
-            gap: 5px;
+            gap: 5px; 
             align-items: center;
             background-color: rgba(43, 29, 18, 0.8);
-            padding: 4px 8px;
+            padding: 4px;
             border-radius: 20px;
             border: 1px solid var(--primary);
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
@@ -237,14 +252,6 @@
             background-color: var(--primary);
             color: #382e25;
             box-shadow: 0 0 15px rgba(229, 122, 68, 0.6);
-        }
-
-        .zoom-label {
-            font-size: 0.8rem;
-            min-width: 35px;
-            text-align: center;
-            font-family: 'Century Gothic', sans-serif;
-            color: var(--text-light);
         }
 
         .spread-viewport {
@@ -415,21 +422,10 @@
             filter: grayscale(0.5);
         }
 
-        /* Information Icon & Tooltip - Centered Bottom */
-        .info-toggle-container {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 105;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .info-icon-btn {
-            width: 32px;
-            height: 32px;
+        /* Pulsanti Toolbar Centrale Standardizzati */
+        .info-icon-btn, .archive-btn, .draw-icon-btn {
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             background-color: rgba(43, 29, 18, 0.9);
             border: 1px solid var(--primary);
@@ -438,8 +434,8 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            font-family: 'Cinzel', serif;
             font-weight: bold;
-            font-family: serif;
             font-size: 1.1rem;
             box-shadow: 0 0 10px rgba(229, 122, 68, 0.3);
             transition: all 0.3s ease;
@@ -447,15 +443,38 @@
             line-height: 1;
         }
 
-        .info-icon-btn:hover {
+        .info-icon-btn:hover, .archive-btn:hover:not(:disabled), .draw-icon-btn:hover:not(:disabled) {
             background-color: var(--primary);
             color: var(--bg-dark);
             box-shadow: 0 0 15px var(--primary);
         }
 
+        .draw-icon-btn svg {
+            width: 18px;
+            height: 28px;
+        }
+
+        .archive-btn:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        /* Information Icon & Tooltip - Centered Bottom Toolbar */
+        .info-toggle-container {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 105;
+            display: flex;
+            flex-direction: row; 
+            align-items: center;
+            gap: 12px;
+        }
+
         .info-tooltip {
             position: absolute;
-            bottom: 45px;
+            bottom: 50px;
             left: 50%;
             transform: translateX(-50%) translateY(10px);
             background-color: rgba(43, 29, 18, 0.95);
@@ -479,34 +498,29 @@
             pointer-events: auto;
         }
 
-        .completion-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background-color: rgba(43, 29, 18, 0.8);
-            padding: 5px 10px;
-            border-radius: 20px;
-            border: 1px solid var(--primary);
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-
-        .completion-label {
-            font-family: 'Cinzel', serif;
-            font-size: 0.9rem;
+        .archive-feedback {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
             color: var(--text-light);
-            margin: 0;
-            padding: 0 5px;
-            text-align: center;
+            z-index: 2001;
+            pointer-events: none;
+            animation: fadeIn 0.3s ease;
+            white-space: nowrap;
         }
 
-        .completion-btn {
-            padding: 5px 10px;
-            font-size: 0.8rem;
-            min-width: auto;
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            text-transform: uppercase;
+        /* Pulsante FINE */
+        .completion-btn-final {
+            font-size: 1.1rem;
+            padding: 10px 25px;
+            letter-spacing: 2px;
+            border-radius: 30px;
+            box-shadow: 0 0 15px rgba(229, 122, 68, 0.6);
         }
 
         .daily-view, .admin-view {
@@ -628,12 +642,12 @@
             .admin-panel { height: 60vh; }
             .corner-controls { bottom: 20px; right: 15px; }
             .bottom-left-controls { bottom: 20px; left: 15px; }
-            .info-toggle-container { bottom: 20px; }
+            .info-toggle-container { bottom: 20px; gap: 8px; }
+            .info-icon-btn, .archive-btn, .draw-icon-btn { width: 38px; height: 38px; font-size: 1rem; }
+            .draw-icon-btn svg { width: 16px; height: 26px; }
             .action-btn { min-width: auto; padding: 6px 12px; font-size: 0.75rem; }
-            .completion-container { padding: 4px 8px; }
-            .completion-label { font-size: 0.8rem; }
-            .completion-btn { font-size: 0.75rem; padding: 4px 8px; }
             .card-label { font-size: 0.7rem; bottom: -24px; letter-spacing: 1px; }
+            .name-input, .date-input, .start-button, .daily-button { width: 240px !important; }
         }
 
     </style>
@@ -642,7 +656,9 @@
   "imports": {
     "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "html-to-image": "https://esm.sh/html-to-image@1.11.11",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2"
   }
 }
 </script>
