@@ -312,6 +312,7 @@ const App = () => {
     });
 
     const [dailyCardIndex, setDailyCardIndex] = useState<number | null>(null);
+    const [dailyCardInverted, setDailyCardInverted] = useState<boolean>(false);
     
     const [zoomLevel, setZoomLevel] = useState<number>(() => {
         if (typeof window === 'undefined') return 1;
@@ -420,16 +421,23 @@ const App = () => {
     const handleDailyCardClick = () => {
         const today = new Date().toISOString().slice(0, 10);
         const key = `itarot_major_card_of_the_day_${today}`;
+        const invKey = `itarot_major_card_of_the_day_inv_${today}`;
         const stored = localStorage.getItem(key);
+        const storedInv = localStorage.getItem(invKey);
         
         let index;
+        let inverted;
         if (stored) {
             index = parseInt(stored, 10);
+            inverted = storedInv === 'true';
         } else {
             index = Math.floor(Math.random() * 22);
+            inverted = Math.random() < 0.5;
             localStorage.setItem(key, index.toString());
+            localStorage.setItem(invKey, inverted.toString());
         }
         setDailyCardIndex(index);
+        setDailyCardInverted(inverted);
         setView('daily');
     };
 
@@ -746,6 +754,7 @@ const App = () => {
                         src={MAJOR_ARCANA_IMAGES[dailyCardIndex]} 
                         className="daily-card-img" 
                         alt={MAJOR_ARCANA_NAMES[dailyCardIndex]} 
+                        style={{ transform: dailyCardInverted ? 'rotate(180deg)' : 'none' }}
                     />
                     <div className="daily-phrase">
                         {phrases[dailyCardIndex]}
