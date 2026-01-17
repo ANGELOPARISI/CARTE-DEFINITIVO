@@ -9,12 +9,12 @@
 
         :root {
             --primary: #F49F2C; /* Ambra principale */
-            --bg-dark: #3d2406; /* Marrone profondo per testi e contrasto */
+            --bg-dark: #5D3A1A; /* Marrone dorato più chiaro per contrasto */
             --text-light: #f5e9d3;
             --terra-light: #FCD6A7; /* Terra chiaro per pulsanti */
-            --amber-warm: #F49F2C;
-            --amber-dark: #3d2406;
-            --glow-soft: rgba(244, 159, 44, 0.3);
+            --amber-warm: #FDBB6D; /* Ambra più luminosa */
+            --amber-dark: #5D3A1A; /* Sfondo scuro alleggerito */
+            --glow-soft: rgba(253, 187, 109, 0.3);
         }
 
         body {
@@ -28,8 +28,8 @@
             align-items: center;
             min-height: 100vh;
             overflow: hidden;
-            /* Gradiente globale coerente su tutte le pagine */
-            background: radial-gradient(circle at center, var(--amber-warm) 0%, var(--amber-dark) 90%);
+            /* Gradiente globale alleggerito e più caldo */
+            background: radial-gradient(circle at center, var(--amber-warm) 0%, var(--amber-dark) 95%);
         }
 
         #root {
@@ -58,7 +58,7 @@
         h1 {
             font-size: 2.2rem;
             font-weight: 700;
-            text-shadow: 0 0 10px rgba(0,0,0,0.5), 0 0 20px rgba(244, 159, 44, 0.4);
+            text-shadow: 0 0 10px rgba(0,0,0,0.5), 0 0 20px rgba(253, 187, 109, 0.4);
             margin-bottom: 0.5rem;
             color: var(--text-light);
         }
@@ -94,7 +94,7 @@
         button:hover, .zoom-btn:hover, .info-icon-btn:hover, .draw-icon-btn:hover, .action-btn:hover {
             background-color: var(--amber-warm);
             color: var(--text-light);
-            box-shadow: 0 0 20px rgba(244, 159, 44, 0.6);
+            box-shadow: 0 0 20px rgba(253, 187, 109, 0.6);
             transform: translateY(-1px);
         }
         
@@ -142,13 +142,13 @@
             font-family: 'Century Gothic', sans-serif;
             font-size: 1.1rem;
             font-style: italic;
-            background-color: rgba(61, 36, 6, 0.7);
+            background-color: rgba(93, 58, 26, 0.7);
             border: 2px solid var(--amber-warm);
             border-radius: 4px;
             color: var(--text-light);
             text-align: center;
             outline: none;
-            box-shadow: 0 0 10px rgba(244, 159, 44, 0.1);
+            box-shadow: 0 0 10px rgba(253, 187, 109, 0.1);
             box-sizing: border-box;
             margin: 5px;
         }
@@ -173,7 +173,7 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
             max-width: 90%;
             margin: 0 auto;
-            background-color: rgba(61, 36, 6, 0.85);
+            background-color: rgba(93, 58, 26, 0.85);
             padding: 8px 20px;
             border-radius: 30px;
             border: 1px solid var(--amber-warm);
@@ -199,7 +199,7 @@
             display: flex;
             gap: 8px; 
             align-items: center;
-            background-color: rgba(61, 36, 6, 0.85);
+            background-color: rgba(93, 58, 26, 0.85);
             padding: 8px;
             border-radius: 40px;
             border: 1px solid var(--amber-warm);
@@ -230,7 +230,7 @@
             align-items: center;
             gap: 15px;
             padding: 8px 15px;
-            background-color: rgba(61, 36, 6, 0.8);
+            background-color: rgba(93, 58, 26, 0.8);
             border-radius: 40px;
             border: 1px solid var(--amber-warm);
         }
@@ -254,14 +254,17 @@
             background-color: var(--amber-dark);
             border: 1px solid var(--amber-warm);
             color: var(--text-light);
-            padding: 12px 18px;
+            padding: 8px 12px;
             border-radius: 10px;
-            font-size: 0.9rem;
+            font-size: 1.1rem;
+            font-weight: bold;
             white-space: nowrap;
             box-shadow: 0 4px 20px rgba(0,0,0,0.8);
             opacity: 0;
             transition: all 0.3s ease;
             pointer-events: none;
+            min-width: 40px;
+            text-align: center;
         }
 
         .info-tooltip.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -281,7 +284,7 @@
             transition: transform 0.6s ease, opacity 0.6s ease, width 0.3s ease, height 0.3s ease;
             opacity: 0;
             cursor: pointer;
-            overflow: visible; /* Assicura che la carta non sia tagliata se l'inner eccede */
+            overflow: visible;
         }
         
         .card.is-visible {
@@ -392,39 +395,42 @@
             color: var(--amber-dark);
         }
 
-        /* Sezione Carta del Giorno */
+        /* Sezione Carta del Giorno - Raffinata */
         .daily-card-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 24px;
-            margin: 20px 0;
-            max-width: 90%;
+            justify-content: center;
+            gap: 15px;
+            max-width: 320px;
+            max-height: 85vh;
+            margin: auto;
             z-index: 10;
         }
 
         .daily-card-img {
             max-width: 100%;
+            max-height: 55vh;
+            width: auto;
             height: auto;
-            max-height: 48vh; /* Limita l'altezza per schermi verticali */
-            border-radius: 12px;
-            border: 4px solid var(--amber-warm);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.8);
             object-fit: contain;
+            border-radius: 10px;
+            border: 3px solid var(--amber-warm);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
             display: block;
-            background-color: rgba(61, 36, 6, 0.4);
+            background-color: rgba(93, 58, 26, 0.4);
         }
 
         .daily-phrase {
-            font-size: 1.3rem;
+            font-size: 1.15rem;
             color: var(--text-light);
-            max-width: 550px;
+            max-width: 420px;
             text-align: center;
             font-style: italic;
-            line-height: 1.5;
-            background: rgba(61, 36, 6, 0.85);
-            padding: 18px 25px;
-            border-radius: 14px;
+            line-height: 1.4;
+            background: rgba(93, 58, 26, 0.85);
+            padding: 15px 20px;
+            border-radius: 12px;
             border: 1px solid var(--amber-warm);
             box-shadow: 0 8px 25px rgba(0,0,0,0.6);
             margin-top: 5px;
@@ -435,7 +441,7 @@
             width: 95%;
             max-width: 700px;
             height: 70vh;
-            background: rgba(61, 36, 6, 0.9);
+            background: rgba(93, 58, 26, 0.9);
             border: 2px solid var(--amber-warm);
             border-radius: 12px;
             padding: 25px;
@@ -447,7 +453,7 @@
         }
 
         .admin-label { color: var(--amber-warm); font-weight: bold; }
-        .admin-row { border-bottom: 1px solid rgba(244, 159, 44, 0.2); padding-bottom: 12px; }
+        .admin-row { border-bottom: 1px solid rgba(253, 187, 109, 0.2); padding-bottom: 12px; }
 
         .admin-toggle-btn {
             position: absolute;
@@ -462,8 +468,8 @@
         }
 
         @media (max-width: 600px) {
-            .daily-card-img { max-height: 40vh; }
-            .daily-phrase { font-size: 1.1rem; padding: 15px; }
+            .daily-card-img { max-height: 45vh; }
+            .daily-phrase { font-size: 1.0rem; padding: 12px; }
             .corner-controls, .bottom-left-controls, .info-toggle-container { bottom: 20px; }
             .info-icon-btn, .draw-icon-btn { width: 40px; height: 40px; }
             .name-input, .date-input, .start-button, .daily-button { width: 240px !important; }
