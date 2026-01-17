@@ -594,7 +594,7 @@ const App = () => {
 
                 <div className="info-toggle-container">
                     <div className={`info-tooltip ${showInfo ? 'show' : ''}`}>
-                        Carte totali in questa stesura: {totalPlannedCards}
+                        {totalPlannedCards}
                     </div>
                     <button 
                         className="info-icon-btn" 
